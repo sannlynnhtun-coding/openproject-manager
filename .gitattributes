@@ -1,0 +1,3 @@
+*.patch -text
+*.woff2 binary
+*.ico binary
