@@ -1,0 +1,290 @@
+diff --git a/Gemfile b/Gemfile
+index 8316b78754296d00adca2ad13c38657df17d1f66..02bf3a004b5ae585c4d2e98be40d58abfe45161a 100644
+--- a/Gemfile
++++ b/Gemfile
+@@ -121,6 +121,7 @@ gem "csv", "~> 3.3"
+ 
+ # provide compatible filesystem information for available storage
+ gem "sys-filesystem", "~> 1.6.0", require: false
++gem "win32ole", platforms: :windows
+ 
+ gem "bcrypt", "~> 3.1.22"
+ 
+@@ -231,7 +232,8 @@ gem "appsignal", "~> 4.9", require: false
+ 
+ # Yabeda integration
+ gem "yabeda-activerecord"
+-gem "yabeda-prometheus-mmap", require: false
++gem "yabeda-prometheus", require: false, platforms: :windows
++gem "yabeda-prometheus-mmap", require: false, platforms: :ruby
+ gem "yabeda-puma-plugin"
+ gem "yabeda-rails"
+ 
+diff --git a/Gemfile.lock b/Gemfile.lock
+index 0aef19550fa450e6d68192084759eb0027ca4e97..5d43ae92e576828976c701f9aede17ddac4d0be6 100644
+--- a/Gemfile.lock
++++ b/Gemfile.lock
+@@ -453,10 +453,13 @@ GEM
+     coderay (1.1.3)
+     color_conversion (0.1.2)
+     colored2 (4.0.3)
++    commonmarker (2.8.3)
++      rb_sys (~> 0.9)
+     commonmarker (2.8.3-aarch64-linux)
+     commonmarker (2.8.3-aarch64-linux-musl)
+     commonmarker (2.8.3-arm-linux)
+     commonmarker (2.8.3-arm64-darwin)
++    commonmarker (2.8.3-x64-mingw-ucrt)
+     commonmarker (2.8.3-x86_64-darwin)
+     commonmarker (2.8.3-x86_64-linux)
+     commonmarker (2.8.3-x86_64-linux-musl)
+@@ -594,11 +597,13 @@ GEM
+       concurrent-ruby (~> 1.1)
+       webrick (~> 1.7)
+       websocket-driver (~> 0.7)
++    ffi (1.17.4)
+     ffi (1.17.4-aarch64-linux-gnu)
+     ffi (1.17.4-aarch64-linux-musl)
+     ffi (1.17.4-arm-linux-gnu)
+     ffi (1.17.4-arm-linux-musl)
+     ffi (1.17.4-arm64-darwin)
++    ffi (1.17.4-x64-mingw-ucrt)
+     ffi (1.17.4-x86_64-darwin)
+     ffi (1.17.4-x86_64-linux-gnu)
+     ffi (1.17.4-x86_64-linux-musl)
+@@ -667,6 +672,9 @@ GEM
+     google-protobuf (4.35.1-arm64-darwin)
+       bigdecimal
+       rake (~> 13.3)
++    google-protobuf (4.35.1-x64-mingw-ucrt)
++      bigdecimal
++      rake (~> 13.3)
+     google-protobuf (4.35.1-x86_64-darwin)
+       bigdecimal
+       rake (~> 13.3)
+@@ -874,6 +882,8 @@ GEM
+       racc (~> 1.4)
+     nokogiri (1.19.4-arm64-darwin)
+       racc (~> 1.4)
++    nokogiri (1.19.4-x64-mingw-ucrt)
++      racc (~> 1.4)
+     nokogiri (1.19.4-x86_64-darwin)
+       racc (~> 1.4)
+     nokogiri (1.19.4-x86_64-linux-gnu)
+@@ -1120,6 +1130,7 @@ GEM
+     pg (1.6.3-aarch64-linux)
+     pg (1.6.3-aarch64-linux-musl)
+     pg (1.6.3-arm64-darwin)
++    pg (1.6.3-x64-mingw-ucrt)
+     pg (1.6.3-x86_64-darwin)
+     pg (1.6.3-x86_64-linux)
+     pg (1.6.3-x86_64-linux-musl)
+@@ -1136,6 +1147,8 @@ GEM
+       prawn (>= 1.3.0, < 3.0.0)
+     prettyprint (0.2.0)
+     prism (1.9.0)
++    prometheus-client (4.2.5)
++      base64
+     prometheus-client-mmap (1.6.0)
+       base64
+       bigdecimal
+@@ -1382,6 +1395,9 @@ GEM
+     ruby-prof (2.0.5)
+       base64
+       ostruct
++    ruby-prof (2.0.5-x64-mingw-ucrt)
++      base64
++      ostruct
+     ruby-progressbar (1.13.0)
+     ruby-rc4 (0.1.5)
+     ruby-saml (1.18.1)
+@@ -1521,6 +1537,7 @@ GEM
+       websocket-extensions (>= 0.1.0)
+     websocket-extensions (0.1.5)
+     will_paginate (4.0.1)
++    win32ole (1.9.3)
+     with_advisory_lock (7.5.0)
+       activerecord (>= 7.2)
+       zeitwerk (>= 2.7)
+@@ -1534,6 +1551,10 @@ GEM
+       activerecord (>= 6.0)
+       anyway_config (>= 1.3, < 3.0)
+       yabeda (~> 0.6)
++    yabeda-prometheus (0.9.1)
++      prometheus-client (>= 3.0, < 5.0)
++      rack
++      yabeda (~> 0.10)
+     yabeda-prometheus-mmap (0.4.0)
+       prometheus-client-mmap
+       yabeda (~> 0.10)
+@@ -1558,6 +1579,7 @@ PLATFORMS
+   arm-linux-musl
+   arm64-darwin
+   arm64-darwin-25
++  x64-mingw-ucrt
+   x86_64-darwin
+   x86_64-linux
+   x86_64-linux-gnu
+@@ -1783,8 +1805,10 @@ DEPENDENCIES
+   warden-basic_auth (~> 0.2.1)
+   webmock (~> 3.26)
+   will_paginate (~> 4.0.0)
++  win32ole
+   with_advisory_lock (~> 7.5.0)
+   yabeda-activerecord
++  yabeda-prometheus
+   yabeda-prometheus-mmap
+   yabeda-puma-plugin
+   yabeda-rails
+@@ -1857,10 +1881,12 @@ CHECKSUMS
+   coderay (1.1.3) sha256=dc530018a4684512f8f38143cd2a096c9f02a1fc2459edcfe534787a7fc77d4b
+   color_conversion (0.1.2) sha256=99bea5fa412e1527a11389975aa6ad445ff8528ebae202c11d08c45ea2b94c96
+   colored2 (4.0.3) sha256=63e1038183976287efc43034f5cca17fb180b4deef207da8ba78d051cbce2b37
++  commonmarker (2.8.3) sha256=711abde5015289f657b28a4edadd77d14f2c898d824595be6cd7018664cc8d7a
+   commonmarker (2.8.3-aarch64-linux) sha256=e1dc00363acc6795cdbf4f5131d9daef4e3ca08102f9a7577ea47d9ba4d4b7d6
+   commonmarker (2.8.3-aarch64-linux-musl) sha256=362302bf9b7520e9c0527f4c1a428c6c14d530361b982ae86ad670c29a2cb0dc
+   commonmarker (2.8.3-arm-linux) sha256=63903a4d8cd82b6681e88f2bdf6df7d51d0a241009a80fdc7ac6cf9c784f6cab
+   commonmarker (2.8.3-arm64-darwin) sha256=ee2e8b00530f7c95acdee7717d8c47f419f3eab78127ea0ef19b6739a148d5ba
++  commonmarker (2.8.3-x64-mingw-ucrt) sha256=1531310040c9579c34a5fad7cc35f69b4ced4839e78b082dc1e6b94357641c03
+   commonmarker (2.8.3-x86_64-darwin) sha256=8ecfee9d2c4768b9f66eafcf9fba82b91495f90f7d4242d0a85f6266684591f3
+   commonmarker (2.8.3-x86_64-linux) sha256=8b78d99ed454346a488988b2ac530e88a98b44f116fb9db19a5b2d5c46c67f83
+   commonmarker (2.8.3-x86_64-linux-musl) sha256=0a42f71205697edf8a488b50b6209b9cee882c39f8b18ac0a323be83ff17b250
+@@ -1919,11 +1945,13 @@ CHECKSUMS
+   faraday-follow_redirects (0.5.0) sha256=5cde93c894b30943a5d2b93c2fe9284216a6b756f7af406a1e55f211d97d10ad
+   faraday-net_http (3.4.4) sha256=0e78af151747ed1b00f33e25973b4bc220d7f16c00c39676817c8b12331eb588
+   ferrum (0.17.2) sha256=2c2540a850b211a46f4d81de21bfd62048f507e4c327d1807225c3823c17e6ee
++  ffi (1.17.4) sha256=bcd1642e06f0d16fc9e09ac6d49c3a7298b9789bcb58127302f934e437d60acf
+   ffi (1.17.4-aarch64-linux-gnu) sha256=b208f06f91ffd8f5e1193da3cae3d2ccfc27fc36fba577baf698d26d91c080df
+   ffi (1.17.4-aarch64-linux-musl) sha256=9286b7a615f2676245283aef0a0a3b475ae3aae2bb5448baace630bb77b91f39
+   ffi (1.17.4-arm-linux-gnu) sha256=d6dbddf7cb77bf955411af5f187a65b8cd378cb003c15c05697f5feee1cb1564
+   ffi (1.17.4-arm-linux-musl) sha256=9d4838ded0465bef6e2426935f6bcc93134b6616785a84ffd2a3d82bc3cf6f95
+   ffi (1.17.4-arm64-darwin) sha256=19071aaf1419251b0a46852abf960e77330a3b334d13a4ab51d58b31a937001b
++  ffi (1.17.4-x64-mingw-ucrt) sha256=f6ff9618cfccc494138bddade27aa06c74c6c7bc367a1ea1103d80c2fcb9ed35
+   ffi (1.17.4-x86_64-darwin) sha256=aa70390523cf3235096cf64962b709b4cfbd5c082a2cb2ae714eb0fe2ccda496
+   ffi (1.17.4-x86_64-linux-gnu) sha256=9d3db14c2eae074b382fa9c083fe95aec6e0a1451da249eab096c34002bc752d
+   ffi (1.17.4-x86_64-linux-musl) sha256=3fdf9888483de005f8ef8d1cf2d3b20d86626af206cbf780f6a6a12439a9c49e
+@@ -1948,6 +1976,7 @@ CHECKSUMS
+   google-protobuf (4.35.1-aarch64-linux-gnu) sha256=50ca44d0eeff3f8475e630a1accdd974256f3510694d574e2c9d6119ea8bc9e1
+   google-protobuf (4.35.1-aarch64-linux-musl) sha256=d5c65cef6bd6498a9e5ed5f88cf6cf7e341c10b0a005e32137d5d1a2b6e8c18a
+   google-protobuf (4.35.1-arm64-darwin) sha256=d9c957df04fa89c749fa9a72a7b383eb4296efc9b2303dc6fd6fbe39c698ad6b
++  google-protobuf (4.35.1-x64-mingw-ucrt) sha256=0660b716c44a4d3baa5cb648cd95dc7faed87ea92cd08fe92cf9156415b35033
+   google-protobuf (4.35.1-x86_64-darwin) sha256=66b62b4df00931018a692806df66393efa960d6d2b7da69735187249f950d3ee
+   google-protobuf (4.35.1-x86_64-linux-gnu) sha256=c786439087512a3fbd199e9897d265b855f951d4027e218ea55e858d45969edd
+   google-protobuf (4.35.1-x86_64-linux-musl) sha256=91890eb0002934a339fdb7d77a147c46b7474b6799db27872b747b905837f744
+@@ -2031,6 +2060,7 @@ CHECKSUMS
+   nokogiri (1.19.4-arm-linux-gnu) sha256=a301313e38bb065d68239e79734bcd6f56fb6efaacebde29e9abf2a4735340ca
+   nokogiri (1.19.4-arm-linux-musl) sha256=588923c101bcfa78869734d247d25b598674323e7f22474fc468f6e5647311eb
+   nokogiri (1.19.4-arm64-darwin) sha256=a46db9853286e6597b36ebc6953817d15acf3a299583eb3f89fdc6f91dd63527
++  nokogiri (1.19.4-x64-mingw-ucrt) sha256=051da97b8eccfdb5444fed40246a35e10d7298b9efe759b4cd25455ea04c587e
+   nokogiri (1.19.4-x86_64-darwin) sha256=7fd17057d3e1f00e9954a74b3cd76595d3d4a5ef233b7ed9599047c204f70551
+   nokogiri (1.19.4-x86_64-linux-gnu) sha256=379fae440b28915e3f19d752ce2dcf8465ed2b2fbefd2a7ca0dd497bc981a06a
+   nokogiri (1.19.4-x86_64-linux-musl) sha256=17dfb7c1fa194ae02fbf7c51a7afc8d278045ab3fdacfd86f91d02d7b274470b
+@@ -2145,6 +2175,7 @@ CHECKSUMS
+   pg (1.6.3-aarch64-linux) sha256=0698ad563e02383c27510b76bf7d4cd2de19cd1d16a5013f375dd473e4be72ea
+   pg (1.6.3-aarch64-linux-musl) sha256=06a75f4ea04b05140146f2a10550b8e0d9f006a79cdaf8b5b130cde40e3ecc2c
+   pg (1.6.3-arm64-darwin) sha256=7240330b572e6355d7c75a7de535edb5dfcbd6295d9c7777df4d9dddfb8c0e5f
++  pg (1.6.3-x64-mingw-ucrt) sha256=cdff974cbde6935e07b8f5cc3c2af7d320bc5263bde06acaae08302194ebf5e1
+   pg (1.6.3-x86_64-darwin) sha256=ee2e04a17c0627225054ffeb43e31a95be9d7e93abda2737ea3ce4a62f2729d6
+   pg (1.6.3-x86_64-linux) sha256=5d9e188c8f7a0295d162b7b88a768d8452a899977d44f3274d1946d67920ae8d
+   pg (1.6.3-x86_64-linux-musl) sha256=9c9c90d98c72f78eb04c0f55e9618fe55d1512128e411035fe229ff427864009
+@@ -2154,6 +2185,7 @@ CHECKSUMS
+   prawn-table (0.2.2) sha256=336d46e39e003f77bf973337a958af6a68300b941c85cb22288872dc2b36addb
+   prettyprint (0.2.0) sha256=2bc9e15581a94742064a3cc8b0fb9d45aae3d03a1baa6ef80922627a0766f193
+   prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
++  prometheus-client (4.2.5) sha256=807bebc3e92ccd9f4d814d90be15e85338f3708d227badf80924ef3f6e7d5225
+   prometheus-client-mmap (1.6.0) sha256=239e5d26462afa4f1f07102c7d2ce7f921ed40168a56294df38f88b7b9636570
+   prometheus-client-mmap (1.6.0-aarch64-linux-gnu) sha256=a5f1b4f9204042ffbbfab269ef3e18e60297788da32a8b12a2fed243939dc44d
+   prometheus-client-mmap (1.6.0-aarch64-linux-musl) sha256=e8fcba32ef2483dcbc0794b96d3b2087d4fbcc0992b8edfa996e68b827c0f58e
+@@ -2235,6 +2267,7 @@ CHECKSUMS
+   ruby-next-core (1.2.0) sha256=f6a7d00bb5186cecbb02f7f1845a0f3a2c9788d35b6ccff5c9be3f0d46799b86
+   ruby-ole (1.2.13.1) sha256=578d10dd2a797a2b35a1286c6fb2c9525f67c24791346fc8015d39f0ffa3cb72
+   ruby-prof (2.0.5) sha256=dbc3b5112089538ac33303145db0cbd77cbdcdbc05b09e44a967ff72a36d6c0e
++  ruby-prof (2.0.5-x64-mingw-ucrt) sha256=b0db5a146a33feb8144299fc4b2c67aa8436b956845ccb2d92e5d89fcfdc6c48
+   ruby-progressbar (1.13.0) sha256=80fc9c47a9b640d6834e0dc7b3c94c9df37f08cb072b7761e4a71e22cff29b33
+   ruby-rc4 (0.1.5) sha256=00cc40a39d20b53f5459e7ea006a92cf584e9bc275e2a6f7aa1515510e896c03
+   ruby-saml (1.18.1) sha256=1b0e7a44aef150b4197955f5e015d593672e242cfdc5d06aa7554ec2350b9107
+@@ -2304,10 +2337,12 @@ CHECKSUMS
+   websocket-driver (0.8.2) sha256=97c556b019bf3410b4961002ac501621e9322d3f8a7bc02161a09301cc4c4146
+   websocket-extensions (0.1.5) sha256=1c6ba63092cda343eb53fc657110c71c754c56484aad42578495227d717a8241
+   will_paginate (4.0.1) sha256=107b226ebe1d393d274575956a7c472e1eefdd97d8828e01b72d425d15a875b9
++  win32ole (1.9.3) sha256=01f43dc5dc13806e6e58204f538b4a28f3d85968ea89074abc9a3cd118e94d96
+   with_advisory_lock (7.5.0) sha256=dadb2f1ed35a10ed7b9649a6769e6848bc64f735a85eb8a6e162a81d383a15bf
+   xpath (3.2.0) sha256=6dfda79d91bb3b949b947ecc5919f042ef2f399b904013eb3ef6d20dd3a4082e
+   yabeda (0.16.0) sha256=7f6e51acd7d9a51d850ea8c3844f72a24882f1312b3fc3836052bcd63d384cba
+   yabeda-activerecord (0.1.2) sha256=1dd281a64e5742445a6718aa05e799ea08a397e9ab9c0d254ece447635a3e0e2
++  yabeda-prometheus (0.9.1) sha256=b87d80cae8cffbeb527c25d288eafa8eed9c1fb56cf49616db5c8611768cd5fd
+   yabeda-prometheus-mmap (0.4.0) sha256=1a66120756d6f931f03a7784e08e79060d71681ff83a9f5287df2ff756e9e2c9
+   yabeda-puma-plugin (0.9.0) sha256=b78673ecc7ee30bc50691ddc41b7022c1c1801843900d5101418f4a14b550bc8
+   yabeda-rails (0.11.0) sha256=afa2581bd44c8f419cb3f2bbf9f6fb40f817c30476f7caf5d1c55c48d69a5b29
+diff --git a/config.ru b/config.ru
+index 94f20f17a13b6cd57dff8172399b766697cd7a1b..70e8ef9db1eca99bfdb9a738ec576fcc49faf31c 100644
+--- a/config.ru
++++ b/config.ru
+@@ -29,7 +29,7 @@
+ # This file is used by Rack-based servers to start the application.
+ 
+ if ENV["OPENPROJECT_PROMETHEUS_EXPORT"] == "true"
+-  require "yabeda/prometheus/mmap"
++  require(Gem.win_platform? ? "yabeda/prometheus" : "yabeda/prometheus/mmap")
+   use Yabeda::Prometheus::Exporter
+ end
+ 
+diff --git a/config/constants/settings/definition.rb b/config/constants/settings/definition.rb
+index b5f0dddd932edbf06ef020354d919c3a90c5ce83..ff3bebe495a147b7b7acddbac55de4db2e99b527 100644
+--- a/config/constants/settings/definition.rb
++++ b/config/constants/settings/definition.rb
+@@ -1335,7 +1335,7 @@ module Settings
+       web: {
+         description: "Web worker count and threads configuration",
+         default: {
+-          "workers" => 2,
++          "workers" => Gem.win_platform? ? 0 : 2,
+           "timeout" => Rails.env.production? ? 120 : 0,
+           "wait_timeout" => 30,
+           "min_threads" => 4,
+diff --git a/config/puma.rb b/config/puma.rb
+index 45237d893624500b49addfa2c84d4be175924cf2..f6ad7652e045c0b726f64b1081b17267f2698a7a 100644
+--- a/config/puma.rb
++++ b/config/puma.rb
+@@ -67,7 +67,11 @@ plugin :tmp_restart unless ENV["RAILS_ENV"] == "production"
+ plugin :appsignal if ENV["APPSIGNAL_ENABLED"] == "true"
+ 
+ if ENV["OPENPROJECT_PROMETHEUS_EXPORT"] == "true"
+-  activate_control_app
++  if Gem.win_platform?
++    activate_control_app ENV.fetch("PUMA_CONTROL_URL", "tcp://127.0.0.1:9293")
++  else
++    activate_control_app
++  end
+   plugin :yabeda
+   plugin :yabeda_prometheus
+ end
+diff --git a/script/windows/check.rb b/script/windows/check.rb
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec3b5410c11f260b0e9fea1dc6ce173601f7d550
+--- /dev/null
++++ b/script/windows/check.rb
+@@ -0,0 +1,23 @@
++# frozen_string_literal: true
++
++require_relative "../../config/boot"
++require "openssl"
++require "logger"
++require "yabeda/prometheus"
++require "rack/mock"
++
++raise "Run this check on native Windows Ruby" unless Gem.win_platform?
++raise "Unix mmap dependency was activated" if Gem.loaded_specs.key?("prometheus-client-mmap")
++raise "OpenSSL failed" unless OpenSSL::Digest::SHA256.hexdigest("native").size == 64
++
++Yabeda.configure do
++  counter :windows_native_checks, comment: "Native Windows compatibility checks"
++end
++Yabeda.configure!
++Yabeda.windows_native_checks.increment({}, by: 1)
++response = Rack::MockRequest.new(Yabeda::Prometheus::Exporter.rack_app).get("/metrics")
++unless response.status == 200 && response.body.match?(/windows_native_checks(?:_total)? 1(?:\.0)?\b/)
++  raise "Prometheus did not export the counter: #{response.status} #{response.body}"
++end
++
++puts "PASS: native Windows OpenSSL and Prometheus export"

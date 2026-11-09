@@ -1,0 +1,73 @@
+diff --git a/config/initializers/windows_file_store.rb b/config/initializers/windows_file_store.rb
+new file mode 100644
+index 0000000000000000000000000000000000000000..801f06531fefa388a8b5d0d7356c3611d7c2d814
+--- /dev/null
++++ b/config/initializers/windows_file_store.rb
+@@ -0,0 +1,34 @@
++# frozen_string_literal: true
++
++if Gem.win_platform?
++  require "active_support/cache/file_store"
++
++  module WindowsFileStoreLock
++    private
++
++    def write_serialized_entry(key, payload, **options)
++      attempts = 0
++      begin
++        super
++      rescue Errno::EACCES
++        # Concurrent readers briefly prevent replacement on Windows.
++        attempts += 1
++        raise if attempts > 20
++
++        sleep 0.01
++        retry
++      end
++    end
++
++    def lock_file(_file_name)
++      # Windows cannot atomically replace the cache entry while its lock handle is open.
++      FileUtils.mkdir_p(File.dirname(cache_path))
++      File.open("#{cache_path}.lock", File::RDWR | File::CREAT, 0o600) do |lock|
++        lock.flock(File::LOCK_EX)
++        yield
++      end
++    end
++  end
++
++  ActiveSupport::Cache::FileStore.prepend(WindowsFileStoreLock)
++end
+diff --git a/script/windows/test_file_store.rb b/script/windows/test_file_store.rb
+new file mode 100644
+index 0000000000000000000000000000000000000000..5e76ef5ce332fd4ecdcf3346fffc7887c36d7b6a
+--- /dev/null
++++ b/script/windows/test_file_store.rb
+@@ -0,0 +1,27 @@
++# frozen_string_literal: true
++
++require "bundler/setup"
++require "active_support"
++require "active_support/cache"
++require "tmpdir"
++require "rbconfig"
++require_relative "../../config/initializers/windows_file_store"
++
++if ARGV.first == "child"
++  cache = ActiveSupport::Cache::FileStore.new(ARGV.fetch(1))
++  20.times do
++    cache.increment("login:admin", 1, expires_in: 60)
++    cache.write("database_migrations", true)
++    cache.read("database_migrations")
++  end
++else
++  Dir.mktmpdir("openproject-cache-") do |directory|
++    path = File.join(directory, "cache")
++    cache = ActiveSupport::Cache::FileStore.new(path)
++    children = 4.times.map { Process.spawn({ "RUBYOPT" => nil }, RbConfig.ruby, File.expand_path(__FILE__), "child", path) }
++    children.each { |pid| raise "Cache writer failed" unless Process.wait2(pid).last.success? }
++    raise "Lost cache increments" unless cache.read("login:admin") == 80
++    raise "Cache replacement failed" unless cache.increment("login:admin") == 81
++  end
++  puts "PASS: Windows cache increments and concurrent writers"
++end
