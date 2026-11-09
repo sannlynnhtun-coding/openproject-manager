@@ -77,6 +77,7 @@ try {
     $license=Join-Path $tools 'WinSW-LICENSE.txt'
     if(!(Test-Path $license)){Invoke-WebRequest 'https://raw.githubusercontent.com/winsw/winsw/v2.12.0/LICENSE.txt' -OutFile $license}
     Copy-Item -LiteralPath $license -Destination (Join-Path $stage 'licenses\WinSW-LICENSE.txt') -Force
+    Copy-Item -LiteralPath (Join-Path $manager 'LICENSE') -Destination (Join-Path $stage 'licenses\OpenProjectManager-LICENSE.txt') -Force
     foreach($file in 'LICENSE-APACHE','PATCH.md'){Copy-Item -LiteralPath (Join-Path $manager "vendor\gpui-pre-windows\$file") -Destination (Join-Path $stage 'licenses\gpui-pre-windows') -Force}
     foreach($file in 'setup-native.ps1','service.rb'){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination $stage -Force}
     Copy-Item -LiteralPath (Join-Path $manager 'README.md') -Destination $stage -Force
